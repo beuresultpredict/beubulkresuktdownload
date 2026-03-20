@@ -1,45 +1,59 @@
-import streamlit as st
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BEU Bulk Result Linker</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; text-align: center; background: #f4f4f4; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
+        input { width: 90%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; }
+        button { background: #28a745; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 5px; font-size: 16px; }
+        .links { margin-top: 20px; text-align: left; }
+        .result-item { background: #e9ecef; padding: 10px; margin: 5px 0; border-radius: 5px; display: flex; justify-content: space-between; }
+        a { color: #007bff; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
 
-st.set_page_config(page_title="BEU Result Tool", page_icon="🎓")
+<div class="card">
+    <h2>🎓 BEU Result Linker</h2>
+    <p>URL और रजिस्ट्रेशन रेंज डालें</p>
+    
+    <input type="text" id="urlInput" placeholder="रिजल्ट का URL यहाँ पेस्ट करें...">
+    <input type="number" id="startReg" placeholder="Start Registration No (23153125001)">
+    <input type="number" id="endReg" placeholder="End Registration No (23153125010)">
+    
+    <button onclick="generateLinks()">Generate Links</button>
 
-st.title("🎓 BEU Universal Result Linker")
-st.write("भविष्य के किसी भी सेमेस्टर का रिजल्ट यहाँ से बल्क में निकालें।")
+    <div id="resultLinks" class="links"></div>
+</div>
 
-# 1. यूज़र से पूरा URL मांगना
-raw_url = st.text_input(
-    "रिजल्ट का URL यहाँ पेस्ट करें (किसी भी एक बच्चे का):", 
-    placeholder="https://beu-bih.ac.in/result-three?name=...&regNo=23153125001&..."
-)
+<script>
+function generateLinks() {
+    let rawUrl = document.getElementById('urlInput').value;
+    let start = parseInt(document.getElementById('startReg').value);
+    let end = parseInt(document.getElementById('endReg').value);
+    let container = document.getElementById('resultLinks');
+    
+    if(!rawUrl || isNaN(start) || isNaN(end)) {
+        alert("कृपया सभी जानकारी सही से भरें!");
+        return;
+    }
 
-st.info("नोट: ऊपर वाले URL में जहाँ रजिस्ट्रेशन नंबर है, उसे यह ऐप अपने आप बदल देगी।")
+    container.innerHTML = "<h4>रिजल्ट लिंक्स:</h4>";
 
-# 2. रजिस्ट्रेशन रेंज
-col1, col2 = st.columns(2)
-with col1:
-    start_reg = st.number_input("शुरुआती Reg No:", value=23153125001, step=1)
-with col2:
-    end_reg = st.number_input("आखिरी Reg No:", value=23153125010, step=1)
-
-if st.button("Generate All Links"):
-    if not raw_url:
-        st.error("कृपया पहले एक सैंपल URL डालें।")
-    else:
-        # यहाँ हम URL में से पुराने RegNo को ढूंढ कर उसे बदलने का लॉजिक लगा रहे हैं
-        import re
+    for (let i = start; i <= end; i++) {
+        // URL में regNo= के बाद वाले नंबर को बदलना
+        let newUrl = rawUrl.replace(/(regNo=)(\d+)/, "$1" + i);
         
-        # URL में 'regNo=' के बाद वाले नंबर को ढूंढना
-        pattern = r"(regNo=)(\d+)"
-        
-        st.success(f"कुल {int(end_reg) - int(start_reg) + 1} लिंक तैयार किए जा रहे हैं...")
-        st.divider()
+        let div = document.createElement('div');
+        div.className = 'result-item';
+        div.innerHTML = `<span>Reg: ${i}</span> <a href="${newUrl}" target="_blank">View & Save PDF</a>`;
+        container.appendChild(div);
+    }
+}
+</script>
 
-        for reg in range(int(start_reg), int(end_reg) + 1):
-            # URL में रजिस्ट्रेशन नंबर को नए नंबर से बदल देना
-            new_url = re.sub(pattern, rf"\1{reg}", raw_url)
-            
-            # डिस्प्ले करना
-            st.markdown(f"**Reg No: {reg}**")
-            st.markdown(f"[यहाँ क्लिक करें और PDF सेव करें]({new_url})")
-            st.divider()
-
-st.caption("Custom Built for BEU Students - No Code Change Needed in Future")
+</body>
+</html>
