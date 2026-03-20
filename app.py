@@ -3,36 +3,54 @@ import requests
 from xhtml2pdf import pisa
 from io import BytesIO
 
+st.set_page_config(page_title="Result Downloader", page_icon="🎓")
+
 st.title("🎓 Bulk Result PDF Downloader")
+st.write("URL और रोल नंबर डालकर रिजल्ट डाउनलोड करें।")
 
-base_url = st.text_input("Base URL (जैसे: https://example.com/result?id=)")
-roll_input = st.text_area("रोल नंबर्स (कोमा ',' लगाकर लिखें)")
+def convert_html_to_pdf(url):
+    try:
+        # वेबसाइट से डेटा लाना
+        response = requests.get(url, timeout=10)
+        if response.status_code != 200:
+            return None
+        
+        # PDF बनाने की प्रक्रिया
+        pdf_buffer = BytesIO()
+        pisa_status = pisa.CreatePDF(response.text, dest=pdf_buffer)
+        
+        if pisa_status.err:
+            return None
+        return pdf_buffer.getvalue()
+    except Exception as e:
+        return None
 
-def convert_url_to_pdf(url):
-    # वेबसाइट से डेटा लाना
-    response = requests.get(url)
-    result_html = response.text
-    
-    # PDF बनाने के लिए मेमोरी बफर का इस्तेमाल
-    pdf_buffer = BytesIO()
-    pisa_status = pisa.CreatePDF(result_html, dest=pdf_buffer)
-    
-    return pdf_buffer.getvalue() if not pisa_status.err else None
+# User Input
+base_url = st.text_input("URL यहाँ डालें:", placeholder="https://example.com/result?id=")
+roll_input = st.text_area("रोल नंबर्स (कोमा लगाकर):", placeholder="101, 102, 103")
 
 if st.button("Generate PDFs"):
-    if base_url and roll_input:
+    if not base_url or not roll_input:
+        st.warning("कृपया सारी जानकारी भरें।")
+    else:
         rolls = [r.strip() for r in roll_input.split(",")]
+        
         for roll in rolls:
             target_url = f"{base_url}{roll}"
-            pdf_data = convert_url_to_pdf(target_url)
+            st.write(f"Processing Roll: {roll}...")
+            
+            pdf_data = convert_html_to_pdf(target_url)
             
             if pdf_data:
                 st.download_button(
-                    label=f"📥 Download Result: {roll}",
+                    label=f"📥 Download Result {roll}",
                     data=pdf_data,
                     file_name=f"Result_{roll}.pdf",
-                    mime="application/pdf"
+                    mime="application/pdf",
+                    key=roll
                 )
-                st.success(f"Roll {roll} तैयार है!")
             else:
-                st.error(f"Roll {roll} बनाने में दिक्कत आई।")
+                st.error(f"Roll {roll} का डेटा नहीं मिल पाया।")
+
+st.markdown("---")
+st.caption("Made with ❤️ by your Coding Partner")
